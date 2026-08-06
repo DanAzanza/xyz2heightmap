@@ -153,16 +153,24 @@ def create_displaced_plane(
     displace_mod.mid_level = 0.0
     displace_mod.strength = cloud.depth_m
 
-    # Create Shader Material
+    # Create or update Shader Material
     mat_name = f"{object_name}_Material"
     if mat_name in bpy.data.materials:
         mat = bpy.data.materials[mat_name]
     else:
         mat = bpy.data.materials.new(name=mat_name)
-        mat.use_nodes = True
-        nodes = mat.node_tree.nodes
-        links = mat.node_tree.links
 
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+
+    tex_node = None
+    for n in nodes:
+        if n.type == 'TEX_IMAGE':
+            tex_node = n
+            break
+
+    if not tex_node:
         nodes.clear()
 
         output_node = nodes.new(type='ShaderNodeOutputMaterial')
@@ -172,18 +180,25 @@ def create_displaced_plane(
         bsdf.location = (100, 0)
 
         tex_node = nodes.new(type='ShaderNodeTexImage')
-        tex_node.image = image
-        if hasattr(tex_node, "image_user"):
-            tex_node.image.colorspace_settings.name = 'Non-Color'
         tex_node.location = (-300, 0)
 
         links.new(tex_node.outputs['Color'], bsdf.inputs['Base Color'])
         links.new(bsdf.outputs['BSDF'], output_node.inputs['Surface'])
 
+    tex_node.image = image
+    if hasattr(tex_node.image, "colorspace_settings"):
+        tex_node.image.colorspace_settings.name = 'Non-Color'
+
     if len(plane_obj.data.materials) == 0:
         plane_obj.data.materials.append(mat)
     else:
         plane_obj.data.materials[0] = mat
+
+    image.update()
+    try:
+        image.gl_touch()
+    except Exception:
+        pass
 
     return plane_obj
 

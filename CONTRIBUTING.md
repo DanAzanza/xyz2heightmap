@@ -1,6 +1,6 @@
 # Contributing to xyz2heightmap
 
-Thank you for your interest in contributing to **xyz2heightmap**! We welcome bug reports, feature requests, code contributions, and documentation improvements.
+Thank you for your interest in contributing to **xyz2heightmap**!
 
 ---
 

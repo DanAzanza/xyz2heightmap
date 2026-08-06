@@ -44,14 +44,14 @@ def generate_heightmap_grid(
     cols = np.clip(((cloud.points[:, 0] - cloud.xmin) * scale_x).astype(np.int32), 0, res_x - 1)
     rows = np.clip(((cloud.ymax - cloud.points[:, 1]) * scale_y).astype(np.int32), 0, res_y - 1)
 
-    grid = np.full((res_y, res_x), -1.0, dtype=np.float32)
+    grid = np.full((res_y, res_x), -np.inf, dtype=np.float32)
 
     # Max Z per grid cell using numpy ufunc for speed
     np.maximum.at(grid, (rows, cols), cloud.points[:, 2])
 
     # Find valid and missing pixel coordinates
-    valid_y, valid_x = np.where(grid >= 0)
-    invalid_y, invalid_x = np.where(grid < 0)
+    valid_y, valid_x = np.where(np.isfinite(grid))
+    invalid_y, invalid_x = np.where(np.isinf(grid))
 
     num_valid = len(valid_y)
     num_invalid = len(invalid_y)
@@ -108,19 +108,21 @@ def create_blender_image(
     clean_name = os.path.splitext(image_name)[0]
     res_y, res_x = normalized_grid.shape
 
-    # Remove existing image with clean_name to ensure fresh buffer allocation
+    # Reuse existing image data-block to preserve texture & shader node links
     if clean_name in bpy.data.images:
-        old_img = bpy.data.images[clean_name]
-        bpy.data.images.remove(old_img, do_unlink=True)
+        image = bpy.data.images[clean_name]
+        if image.size[0] != res_x or image.size[1] != res_y:
+            image.scale(res_x, res_y)
+    else:
+        image = bpy.data.images.new(
+            name=clean_name,
+            width=res_x,
+            height=res_y,
+            alpha=False,
+            float_buffer=True,
+            is_data=True
+        )
 
-    image = bpy.data.images.new(
-        name=clean_name,
-        width=res_x,
-        height=res_y,
-        alpha=False,
-        float_buffer=True,
-        is_data=True
-    )
     image.colorspace_settings.name = 'Non-Color'
 
     rgba = np.empty((res_y, res_x, 4), dtype=np.float32)
@@ -131,6 +133,11 @@ def create_blender_image(
 
     image.pixels.foreach_set(rgba.ravel())
     image.update()
+
+    try:
+        image.gl_touch()
+    except Exception:
+        pass
 
     return image
 
@@ -148,12 +155,23 @@ def export_heightmap_16bit_png(image: bpy.types.Image, output_path: str):
     prev_depth = render_settings.color_depth
     prev_mode = render_settings.color_mode
 
+    view_settings = scene.view_settings
+    prev_transform = getattr(view_settings, "view_transform", None)
+
     try:
         render_settings.file_format = 'PNG'
         render_settings.color_depth = '16'
         render_settings.color_mode = 'BW'
+
+        if prev_transform and 'Raw' in view_settings.bl_rna.properties['view_transform'].enum_items:
+            view_settings.view_transform = 'Raw'
+        elif prev_transform and 'Standard' in view_settings.bl_rna.properties['view_transform'].enum_items:
+            view_settings.view_transform = 'Standard'
+
         image.save_render(output_path, scene=scene)
     finally:
         render_settings.file_format = prev_format
         render_settings.color_depth = prev_depth
         render_settings.color_mode = prev_mode
+        if prev_transform:
+            view_settings.view_transform = prev_transform
