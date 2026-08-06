@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Blender temporary & backup files
+*.blend1
+*.blend2
+*.blend3
+*.crash.txt
+
+# Environment & Dependencies
+.venv/
+venv/
+ENV/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Build & Package artifacts
+dist/
+build/
+*.zip
+*.tar.gz
+
+# Local test outputs & logs
+*.png
+*.log
+!docs/*.png
+!assets/*.png

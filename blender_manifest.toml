@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+id = "xyz_pointcloud_importer"
+version = "2.2.0"
+name = "XYZ Point Cloud Importer"
+tagline = "Import XYZ point clouds as heightmaps or 3D terrain meshes"
+maintainer = "Daniel Azanza Hartmann"
+type = "add-on"
+
+blender_version_min = "4.0.0"
+license = ["GPL-3.0-or-later"]
+
