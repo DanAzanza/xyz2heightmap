@@ -8,4 +8,6 @@ type = "add-on"
 
 blender_version_min = "4.0.0"
 license = ["GPL-3.0-or-later"]
+tags = ["Import-Export", "3D View"]
+website = "https://github.com/DanAzanza/xyz2heightmap"
 
