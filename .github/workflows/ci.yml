@@ -38,7 +38,7 @@ jobs:
 
     - name: Run Pyright Type Checking
       run: |
-        pyright xyz_parser.py
+        pyright
 
     - name: Validate blender_manifest.toml existence
       run: |

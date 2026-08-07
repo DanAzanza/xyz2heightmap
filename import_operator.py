@@ -32,43 +32,43 @@ from .xyz_parser import load_xyz_file
 class XYZTerrainProperties(bpy.types.PropertyGroup):
     """Scene properties for XYZ Terrain plugin"""
 
-    xyz_filepath: StringProperty(
+    xyz_filepath = StringProperty(
         name="XYZ Point Cloud File",
         description="Path to the .xyz point cloud data file",
         subtype="FILE_PATH",
     )
 
-    center_to_origin: BoolProperty(
+    center_to_origin = BoolProperty(
         name="Center to Scene Origin (0,0,0)",
         description="Shift point cloud coordinates so bounding box center is positioned at Blender origin (0, 0, 0)",
         default=True,
     )
 
-    auto_filter_height: BoolProperty(
+    auto_filter_height = BoolProperty(
         name="Auto-Filter Noise Outliers",
         description="Automatically remove extreme noise percentiles below 0.1% and above 99.9%",
         default=True,
     )
 
-    use_manual_height_filter: BoolProperty(
+    use_manual_height_filter = BoolProperty(
         name="Use Manual Elevation Filter",
         description="Enable hard minimum and maximum elevation thresholds",
         default=False,
     )
 
-    min_height: FloatProperty(
+    min_height = FloatProperty(
         name="Min Height (m)",
         description="Manual minimum elevation filter threshold",
         default=0.0,
     )
 
-    max_height: FloatProperty(
+    max_height = FloatProperty(
         name="Max Height (m)",
         description="Manual maximum elevation filter threshold",
         default=500.0,
     )
 
-    resolution_mode: EnumProperty(
+    resolution_mode = EnumProperty(
         name="Resolution Mode",
         description="Choose between Pixels per Meter or Custom Pixel Dimensions",
         items=[
@@ -82,7 +82,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         default="PPM",
     )
 
-    pixels_per_meter: FloatProperty(
+    pixels_per_meter = FloatProperty(
         name="Pixels per Meter",
         description="Resolution of the generated heightmap grid (pixels / meter)",
         default=1.0,
@@ -90,7 +90,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         max=50.0,
     )
 
-    custom_res_x: IntProperty(
+    custom_res_x = IntProperty(
         name="Width (px)",
         description="Custom pixel width of heightmap image",
         default=8192,
@@ -98,7 +98,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         max=32768,
     )
 
-    custom_res_y: IntProperty(
+    custom_res_y = IntProperty(
         name="Height (px)",
         description="Custom pixel height of heightmap image",
         default=8192,
@@ -106,7 +106,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         max=32768,
     )
 
-    idw_k_neighbors: IntProperty(
+    idw_k_neighbors = IntProperty(
         name="IDW Neighbors",
         description="Number of nearest neighbors used for Inverse Distance Weighting KDTree gap filling",
         default=8,
@@ -114,7 +114,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         max=32,
     )
 
-    subdivision_levels: IntProperty(
+    subdivision_levels = IntProperty(
         name="Subdivision Levels",
         description="Subdivision Surface modifier viewport iteration level",
         default=8,
@@ -122,7 +122,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         max=10,
     )
 
-    triangulation_density_pct: FloatProperty(
+    triangulation_density_pct = FloatProperty(
         name="Detail Density (%)",
         description="Percentage of selected object vertices included in triangulation (1% to 100%)",
         default=10.0,
@@ -131,7 +131,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         subtype="PERCENTAGE",
     )
 
-    max_triangulation_points: IntProperty(
+    max_triangulation_points = IntProperty(
         name="Max Vertex Cap",
         description="Maximum point count cap for triangulation safety",
         default=1000000,
@@ -139,7 +139,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         max=50000000,
     )
 
-    export_png_path: StringProperty(
+    export_png_path = StringProperty(
         name="PNG Export Path",
         description="File path destination for 16-bit PNG export",
         subtype="FILE_PATH",
@@ -167,7 +167,7 @@ class IMPORT_OT_xyz_file_select(bpy.types.Operator, ImportHelper):
 
     filename_ext = ".xyz"
 
-    filter_glob: StringProperty(
+    filter_glob = StringProperty(
         default="*.xyz;*.txt;*.pts",
         options={"HIDDEN"},
         maxlen=255,

@@ -1,0 +1,14 @@
+{
+  "include": [
+    "xyz_parser.py"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    ".pytest_cache",
+    ".venv"
+  ],
+  "pythonVersion": "3.10",
+  "reportMissingImports": true,
+  "reportUndefinedVariable": true
+}
