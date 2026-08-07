@@ -46,22 +46,28 @@
 * **Static Analysis & Tooling Rules**:
   * *Python*: Run `ruff check .`, `pyright`, `bandit -r core/ routes/`, and `pytest-cov` after edits and resolve all issues.
 * **Documentation & Utility Reuse**: Code explains *WHAT* it does through clear naming; inline comments explain exclusively *WHY* (background, edge cases, business logic). Inspect `core/utils.py` and existing helpers before creating new utility functions.
+* **Error Messages Should Be Actionable**: User-facing errors should explain what failed, why it happened, and what the user can do next. Avoid vague exceptions or silent fallbacks in workflows that affect the user experience.
+* **Change Scope Discipline**: When editing a repository, keep changes focused and avoid unrelated refactors. If a broader cleanup is necessary, split it into a separate, clearly explained change set.
 
 ---
 
 ## 5. Git Commit Message Guidelines
 When asked to write or suggest Git commit messages, strictly adhere to the following rules:
 
-* **Structure**: Separate the subject line from the body with a blank line. Wrap the body at 72 characters.
+* **Structure**: Use a short subject line followed by an optional body separated by a blank line. Keep the body concise and easy to scan.
 * **Subject Line Rules**:
-  * Limit to **50 characters** maximum.
-  * Capitalize the subject line.
-  * Do not end with punctuation.
-  * Use the **imperative mood** (e.g., "Add feature" instead of "Added feature").
+  * Keep it to **50 characters or fewer**.
+  * Start with a capital letter.
+  * Do not end with a period.
+  * Use the **imperative mood** (for example, "Add CI workflow" instead of "Added CI workflow").
 * **Body Rules**:
-  * Keep the body short and concise, focusing on *WHY* the change was made rather than repeating *WHAT* was done.
-  * Omit the body entirely if the change is fully expressed in the subject line.
-* **Output Standard**: Return **only** the raw commit message text. Do not include meta-commentary, explanations, or raw diff outputs.
+  * Explain the **reason** for the change, not just the implementation details.
+  * Keep it to one or two short sentences.
+  * Mention important context such as bug fixes, user impact, or compatibility concerns when relevant.
+* **Content Rules**:
+  * Be specific and concrete; avoid vague phrases like "improve stuff" or "various fixes".
+  * Mention the affected area when helpful, for example "Blender add-on" or "XYZ parser".
+* **Output Standard**: Return **only** the raw commit message text. Do not include meta-commentary, explanations, or raw diff output.
 
 ---
 
@@ -94,3 +100,11 @@ When building, refactoring, or testing Blender Add-ons using AI assistance and t
 * **Float Image Buffer Management**: When updating existing `bpy.data.images` assets, remove stale instances (`bpy.data.images.remove(old_img, do_unlink=True)`) before creating new float buffers to avoid pixel dimension mismatch errors during `image.pixels.foreach_set()`.
 * **Heightmap Shader Color Space**: Always set `image.colorspace_settings.name = 'Non-Color'` for displacement maps to prevent linear float elevation values from being warped by sRGB gamma curves.
 * **Native `mathutils` Acceleration**: Use built-in `mathutils.kdtree.KDTree` for spatial interpolation (e.g., IDW gap filling) and `mathutils.geometry.delaunay_2d_cdt` for 2D/3D triangulation instead of requiring external C-libraries. Always verify return tuple length (e.g. `delaunay_2d_cdt` returns 6 items).
+
+### 8.4 Project-Specific CI, Testing & Static Analysis Guidance
+* **Repository-Specific CI Principle**: For this repository, keep the core Python logic under strict automated verification, but treat Blender-specific modules as integration code. Do not assume `bpy`, `mathutils`, or `bpy_extras` are importable in a plain Python environment.
+* **Pyright Strategy**: Use `pyright` for the pure Python core and keep Blender modules out of the default type-checking scope unless Blender is installed in the CI environment or explicit stubs are provided. A `pyrightconfig.json` with `include` targeting the pure core is preferred.
+* **Blender-Only Tests**: Place Blender integration tests in a separate script or test file that is skipped when Blender is unavailable. Do not let `pytest` fail during collection just because `bpy` is missing in a non-Blender environment.
+* **CI Workflow Design**: Prefer a split workflow with a pure Python job for `pytest` and `pyright`, plus a separate headless Blender job for add-on integration using the official Blender runtime. This avoids false failures caused by missing Blender APIs in standard runners.
+* **Property Declaration Pattern**: In Blender add-on code, use assignment syntax for Blender properties rather than annotation syntax when running static analysis tools like `pyright`.
+* **Verification Requirement**: Before considering work complete, verify the relevant workflow locally with `pytest -q` and `pyright` and only then rely on GitHub Actions results. For Blender-specific changes, verify with a real Blender runtime if possible.
