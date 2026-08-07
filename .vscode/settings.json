@@ -1,0 +1,11 @@
+{
+  "yaml.customTags": [
+    "!important",
+    "!reference"
+  ],
+  "yaml.validate": true,
+  "yaml.format.enable": true,
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow": [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+  }
+}
