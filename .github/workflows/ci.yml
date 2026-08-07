@@ -11,7 +11,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  unit-tests-and-lint:
+    name: Pure Python Tests & Linting
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -44,3 +45,23 @@ jobs:
       run: |
         test -f blender_manifest.toml
 
+  blender-integration:
+    name: Headless Blender Integration Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        blender-version: ["4.0.2", "4.2.0"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Blender ${{ matrix.blender-version }}
+      uses: blender-actions/setup-blender@v3
+      with:
+        blender-version: ${{ matrix.blender-version }}
+
+    - name: Run Headless Blender Integration Test
+      run: |
+        blender --background --python tests/test_blender_addon.py
