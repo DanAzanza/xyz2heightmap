@@ -24,7 +24,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -55,12 +55,19 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
-    - name: Set up Blender ${{ matrix.blender-version }}
-      uses: blender-actions/setup-blender@v3
-      with:
-        blender-version: ${{ matrix.blender-version }}
+    - name: Install Blender ${{ matrix.blender-version }}
+      run: |
+        set -e
+        BLENDER_VERSION="${{ matrix.blender-version }}"
+        BLENDER_URL="https://download.blender.org/release/Blender${BLENDER_VERSION%.*}/blender-${BLENDER_VERSION}-linux-x64.tar.xz"
+        curl -L "$BLENDER_URL" -o /tmp/blender.tar.xz
+        mkdir -p /tmp/blender
+        tar -xf /tmp/blender.tar.xz -C /tmp/blender --strip-components=1
+        sudo mv /tmp/blender /opt/blender
+        sudo ln -s /opt/blender/blender /usr/local/bin/blender
+        blender --version
 
     - name: Run Headless Blender Integration Test
       run: |
