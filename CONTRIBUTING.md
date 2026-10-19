@@ -45,8 +45,14 @@ Before opening a pull request, ensure all tests and type checks pass:
 # Run Pytest suite
 python -m pytest -v
 
+# Run Ruff linter
+python -m ruff check .
+
 # Run Pyright type checking
-npx pyright@latest .
+python -m pyright
+
+# Run Headless Blender end-to-end integration test
+blender --background --python tests/test_blender_addon.py
 ```
 
 ---

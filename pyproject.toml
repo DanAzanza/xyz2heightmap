@@ -1,0 +1,67 @@
+[project]
+name = "xyz2heightmap"
+version = "2.2.0"
+description = "Blender 4.0+/4.2+ Add-on & Extension for importing ASCII XYZ/PTS/TXT point clouds as 32-bit float heightmaps or 2.5D Delaunay terrain meshes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Daniel Azanza Hartmann" },
+]
+dependencies = [
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pyright>=1.1.390",
+    "ruff>=0.8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-ra -q"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+exclude = [
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pyright]
+include = [
+    "__init__.py",
+    "xyz_parser.py",
+    "heightmap_generator.py",
+    "mesh_generator.py",
+    "import_operator.py",
+    "ui_panel.py",
+    "tests",
+]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+reportMissingImports = true
+reportUndefinedVariable = true

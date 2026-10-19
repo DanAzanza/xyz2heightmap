@@ -31,7 +31,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install numpy pytest pyright
+        pip install numpy pytest pyright ruff
+
+    - name: Run Ruff Linter
+      run: |
+        ruff check .
 
     - name: Run Pytest suite
       run: |

@@ -11,3 +11,15 @@ license = ["GPL-3.0-or-later"]
 tags = ["Import-Export", "3D View"]
 website = "https://github.com/DanAzanza/xyz2heightmap"
 
+[permissions]
+files = "Import XYZ point clouds and export 16-bit PNG heightmaps"
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    "/.*",
+    "/tests/",
+    "/pyproject.toml",
+    "/CONTRIBUTING.md",
+]
+
