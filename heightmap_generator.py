@@ -101,8 +101,9 @@ def _interpolate_gaps_kdtree(
     fallback_z: float,
 ) -> np.ndarray:
     """
-    KDTree-accelerated IDW interpolation for large point clouds inside Blender.
-    Measures distances in physical meters to prevent anisotropic distortion.
+    KDTree-accelerated IDW interpolation for large point clouds inside Blender 5.x.
+    Pre-extracts physical meter coordinates and Z values into flat native lists to
+    eliminate per-neighbor NumPy scalar indexing overhead.
     """
     if mathutils is None:
         raise RuntimeError("_interpolate_gaps_kdtree requires mathutils runtime.")
@@ -112,29 +113,33 @@ def _interpolate_gaps_kdtree(
     num_invalid = len(invalid_x)
     k = min(k_neighbors, num_valid)
 
+    vx_m_list = (valid_x.astype(np.float64) * step_x_m).tolist()
+    vy_m_list = (valid_y.astype(np.float64) * step_y_m).tolist()
+    vz_list = grid[valid_y, valid_x].astype(np.float64).tolist()
+
     kd = mathutils.kdtree.KDTree(num_valid)
     for idx in range(num_valid):
-        kd.insert((float(valid_x[idx]) * step_x_m, float(valid_y[idx]) * step_y_m, 0.0), idx)
+        kd.insert((vx_m_list[idx], vy_m_list[idx], 0.0), idx)
     kd.balance()
 
-    for idx in range(num_invalid):
-        iy = int(invalid_y[idx])
-        ix = int(invalid_x[idx])
-        co = (float(ix) * step_x_m, float(iy) * step_y_m, 0.0)
+    ix_m_list = (invalid_x.astype(np.float64) * step_x_m).tolist()
+    iy_m_list = (invalid_y.astype(np.float64) * step_y_m).tolist()
+    filled_vals = np.empty(num_invalid, dtype=np.float32)
 
+    for idx in range(num_invalid):
+        co = (ix_m_list[idx], iy_m_list[idx], 0.0)
         results = kd.find_n(co, k)
         weights_sum = 0.0
         val_sum = 0.0
 
         for _co_found, index_found, dist in results:
             w = 1.0 / ((dist + IDW_EPSILON) ** idw_power)
-            r_f = valid_y[index_found]
-            c_f = valid_x[index_found]
-            val_sum += w * float(grid[r_f, c_f])
+            val_sum += w * vz_list[index_found]
             weights_sum += w
 
-        grid_filled[iy, ix] = val_sum / weights_sum if weights_sum > 0.0 else fallback_z
+        filled_vals[idx] = val_sum / weights_sum if weights_sum > 0.0 else fallback_z
 
+    grid_filled[invalid_y, invalid_x] = filled_vals
     return grid_filled
 
 
@@ -252,7 +257,7 @@ def create_blender_image(
             is_data=True,
         )
 
-    if image.colorspace_settings is not None:
+    if image.colorspace_settings is not None and cast(Any, image.colorspace_settings).name != "Non-Color":
         cast(Any, image.colorspace_settings).name = "Non-Color"
 
     rgba = np.empty((res_y, res_x, 4), dtype=np.float32)

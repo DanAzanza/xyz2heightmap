@@ -1,21 +1,10 @@
 # pyright: reportMissingImports=false, reportMissingModuleSource=false
 """
-XYZ Point Cloud to Heightmap / Mesh Importer Blender Add-on.
+XYZ Point Cloud to Heightmap / Mesh Importer — Blender 5.x Extension.
+Metadata is managed exclusively via blender_manifest.toml.
 """
 
 from typing import Any, cast
-
-bl_info = {
-    "name": "XYZ Point Cloud Importer",
-    "author": "Daniel Azanza Hartmann & Antigravity AI",
-    "version": (2, 2, 0),
-    "blender": (4, 0, 0),
-    "location": "3D View > Sidebar (N-Panel) > XYZ Terrain & File > Import > XYZ Point Cloud",
-    "description": "Imports XYZ point cloud files as 2D heightmap textures with height-scaled displaced planes or 3D triangulated meshes.",
-    "warning": "",
-    "doc_url": "",
-    "category": "Import-Export",
-}
 
 XYZTerrainProperties: Any = None
 menu_func_import: Any = None

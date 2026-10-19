@@ -49,21 +49,14 @@ except ImportError:
     from xyz_parser import load_xyz_file
 
 
-_PATH_OPTS: set[Any] = (
-    {"PATH_SUPPORTS_BLEND_RELATIVE"}
-    if hasattr(bpy, "app") and getattr(bpy.app, "version", (4, 0, 0)) >= (4, 2, 0)
-    else set()
-)
-
-
 class XYZTerrainProperties(bpy.types.PropertyGroup):
-    """Scene properties for XYZ Terrain add-on."""
+    """Scene properties for XYZ Terrain Blender 5.x Extension."""
 
     xyz_filepath: StringProperty(  # type: ignore[valid-type]
         name="XYZ Point Cloud File",
         description="Path to the .xyz, .pts, or .txt point cloud data file",
         subtype="FILE_PATH",
-        options=_PATH_OPTS,
+        options={"PATH_SUPPORTS_BLEND_RELATIVE"},
     )
 
     center_to_origin: BoolProperty(  # type: ignore[valid-type]
@@ -121,7 +114,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
     custom_res_x: IntProperty(  # type: ignore[valid-type]
         name="Width (px)",
         description="Custom pixel width of heightmap image",
-        default=2048,
+        default=1024,
         min=64,
         max=16384,
     )
@@ -129,7 +122,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
     custom_res_y: IntProperty(  # type: ignore[valid-type]
         name="Height (px)",
         description="Custom pixel height of heightmap image",
-        default=2048,
+        default=1024,
         min=64,
         max=16384,
     )
@@ -172,7 +165,7 @@ class XYZTerrainProperties(bpy.types.PropertyGroup):
         description="File path destination for 16-bit PNG export",
         subtype="FILE_PATH",
         default="//heightmap_16bit.png",
-        options=_PATH_OPTS,
+        options={"PATH_SUPPORTS_BLEND_RELATIVE"},
     )
 
 

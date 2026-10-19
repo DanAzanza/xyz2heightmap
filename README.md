@@ -1,10 +1,10 @@
 # XYZ Point Cloud to Heightmap / Mesh Importer for Blender
 
-[![Blender Version](https://img.shields.io/badge/Blender-4.0%2B%20%7C%204.2%2B-orange.svg)](https://www.blender.org/)
+[![Blender Version](https://img.shields.io/badge/Blender-5.0%2B-orange.svg)](https://www.blender.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 
-An advanced, high-performance **Blender Add-on / Extension** for importing ASCII **XYZ point cloud data files** (`.xyz`, `.txt`, `.pts`) into Blender.
+An advanced, high-performance **Blender 5.x Extension** for importing ASCII **XYZ point cloud data files** (`.xyz`, `.txt`, `.pts`) into Blender.
 
 Convert real-world LiDAR, GIS, or DEM elevation data into **3D terrain meshes** or **32-bit floating-point heightmaps** complete with automated displacement shaders, IDW gap filling, and 16-bit PNG export capabilities.
 
@@ -13,6 +13,7 @@ Convert real-world LiDAR, GIS, or DEM elevation data into **3D terrain meshes** 
 ## 🌟 Key Features
 
 - **🚀 Multi-Format ASCII Parsing**: Fast C-level `numpy.fromfile` path for uniform whitespace tables with automatic fallback for `.pts` point-count headers, multi-column attributes (`X Y Z Intensity R G B`), comments (`#`, `//`, `;`), and CSV/semicolon delimiters.
+- **⚡ Native Blender 5.x C-Buffer Geometry**: Populates millions of point cloud vertices and UV coordinates directly via `foreach_set` C-buffers without intermediate Python list allocations.
 - **🗺️ Dual Generation Modes**:
   1. **2D Float Heightmap Grid**: Generates a 32-bit float texture buffer mapped onto a subdividible plane with an active `Displace` modifier and preconfigured material setup (`Non-Color` color space).
   2. **3D Delaunay/CDT Triangulated Mesh**: Uses Blender's native `mathutils.geometry.delaunay_2d_cdt` for clean, deterministic 2.5D surface triangulation directly from point clouds.
@@ -23,22 +24,13 @@ Convert real-world LiDAR, GIS, or DEM elevation data into **3D terrain meshes** 
 
 ---
 
-## 🛠️ Installation
-
-### Option A: Blender 4.2+ Extension System (Recommended)
+## 🛠️ Installation (Blender 5.0+ Extension System)
 
 1. Download or clone this repository as a `.zip` archive or directory folder.
-2. In Blender, navigate to **Edit > Preferences > Extensions**.
+2. In Blender 5.0+, navigate to **Edit > Preferences > Get Extensions**.
 3. Click the drop-down menu in the top right corner and select **Install from Disk...**.
 4. Choose `xyz2heightmap.zip` (or select `blender_manifest.toml` inside the unzipped directory).
 5. Ensure the extension is enabled.
-
-### Option B: Blender 4.0 & 4.1 (Legacy Add-on Installation)
-
-1. Download the repository source as a `.zip` file.
-2. Open Blender, go to **Edit > Preferences > Add-ons**.
-3. Click **Install...** and select the `.zip` file.
-4. Search for `XYZ Point Cloud Importer` and check the checkbox to activate.
 
 ---
 
@@ -82,8 +74,8 @@ The add-on adds a dedicated **XYZ Terrain** tab to the **3D Viewport Sidebar (N-
 
 ```
 xyz2heightmap/
-├── __init__.py                   # Add-on entry point, bl_info metadata & registration
-├── blender_manifest.toml         # Blender 4.2+ Extension manifest specification
+├── __init__.py                   # Extension entry point & class registration
+├── blender_manifest.toml         # Blender 5.0+ Extension manifest specification
 ├── pyproject.toml                # Unified pytest, ruff, and pyright configuration
 ├── xyz_parser.py                 # Pure Python/NumPy parser & immutable bounding box model
 ├── heightmap_generator.py        # Heightmap rasterizer, physical-space IDW & Blender Image I/O

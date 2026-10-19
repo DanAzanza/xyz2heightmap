@@ -54,8 +54,8 @@ def create_point_cloud_object(
     object_name: str = "XYZ_PointCloud",
 ) -> bpy_types.types.Object:
     """
-    Creates a Point Cloud Mesh Object in Blender containing all 3D vertices from the .xyz file.
-    Does NOT delete or overwrite existing point clouds.
+    Creates a Point Cloud Mesh Object in Blender 5.x using direct C-buffer foreach_set
+    population for multi-million-point datasets without intermediate Python list allocation.
 
     :param cloud: XYZCloudData metrics and points.
     :param object_name: Desired object name.
@@ -65,7 +65,11 @@ def create_point_cloud_object(
         raise RuntimeError("create_point_cloud_object requires an active Blender (bpy) runtime.")
 
     mesh = bpy.data.meshes.new(name=f"{object_name}_Mesh")
-    mesh.from_pydata(cloud.points.tolist(), [], [])
+    num_pts = len(cloud.points)
+    if num_pts > 0:
+        mesh.vertices.add(num_pts)
+        flat_co = np.ascontiguousarray(cloud.points, dtype=np.float32).ravel()
+        mesh.vertices.foreach_set("co", cast(Any, flat_co))
     mesh.update()
 
     obj = bpy.data.objects.new(name=object_name, object_data=mesh)
@@ -115,7 +119,7 @@ def extract_points_from_object(obj: bpy_types.types.Object) -> XYZCloudData:
 
     mw = target_obj.matrix_world
     v_co = np.empty(len(target_obj.data.vertices) * 3, dtype=np.float64)
-    target_obj.data.vertices.foreach_get("co", v_co)
+    target_obj.data.vertices.foreach_get("co", cast(Any, v_co))
     coords = v_co.reshape((-1, 3))
 
     if mathutils is not None and mw != mathutils.Matrix.Identity(4):
@@ -177,8 +181,6 @@ def _configure_plane_material(plane_obj: Any, image: Any, object_name: str) -> N
         links.new(bsdf.outputs["BSDF"], output_node.inputs["Surface"])
 
     tex_node.image = image
-    if hasattr(tex_node.image, "colorspace_settings") and tex_node.image.colorspace_settings is not None:
-        cast(Any, tex_node.image.colorspace_settings).name = "Non-Color"
 
     if len(plane_obj.data.materials) == 0:
         plane_obj.data.materials.append(mat)
@@ -230,9 +232,8 @@ def create_displaced_plane(
     mesh.from_pydata(verts, [], faces)
 
     uv_layer = mesh.uv_layers.new(name="UVMap")
-    uv_coords = ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0))
-    for loop_idx, uv in enumerate(uv_coords):
-        uv_layer.data[loop_idx].uv = uv
+    uv_flat = np.array([0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0], dtype=np.float32)
+    uv_layer.data.foreach_set("uv", cast(Any, uv_flat))
     mesh.update()
 
     plane_obj = bpy.data.objects.new(name=object_name, object_data=mesh)
@@ -304,20 +305,25 @@ def create_triangulated_mesh(
         indices = rng.choice(total_pts, size=target_count, replace=False)
         pts = pts[indices]
 
-    verts_2d = [mathutils.Vector((float(p[0]), float(p[1]))) for p in pts]
+    pts_xy = pts[:, :2].tolist()
+    verts_2d = [mathutils.Vector(xy) for xy in pts_xy]
     cdt_res = geom.delaunay_2d_cdt(verts_2d, [], [], 0, DELAUNAY_EPSILON)
     out_verts, _out_edges, out_faces, orig_verts, _, _ = cdt_res
 
     if len(out_faces) == 0:
         raise ValueError("Delaunay triangulation produced 0 faces (points are colinear in X/Y).")
 
+    z_list = pts[:, 2].tolist()
+    zmin_fallback = cloud.zmin
     mesh_verts = []
     for idx, v2d in enumerate(out_verts):
         orig_indices = orig_verts[idx]
-        if orig_indices:
-            z_val = max(float(pts[i][2]) for i in orig_indices)
+        if len(orig_indices) == 1:
+            z_val = z_list[orig_indices[0]]
+        elif orig_indices:
+            z_val = max(z_list[i] for i in orig_indices)
         else:
-            z_val = cloud.zmin
+            z_val = zmin_fallback
         mesh_verts.append((v2d.x, v2d.y, z_val))
 
     mesh_faces = [list(face) for face in out_faces]

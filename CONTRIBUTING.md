@@ -13,13 +13,14 @@ Thank you for your interest in contributing to **xyz2heightmap**!
    ```
 
 2. **Environment & Dependencies**:
-   - Python 3.10+
+   - Blender 5.0+
+   - Python 3.11+
    - NumPy (`pip install numpy`)
    - Pytest (`pip install pytest`)
 
 3. **Link to Blender for Live Testing**:
-   Copy or symlink this folder to your Blender extensions or add-ons folder:
-   - **Windows**: `%APPDATA%\Blender Foundation\Blender\<version>\extensions\user_default\xyz_pointcloud_importer`
+   Copy or symlink this folder to your Blender 5.x extensions folder:
+   - **Windows**: `%APPDATA%\Blender Foundation\Blender\5.2\extensions\user_default\xyz_pointcloud_importer`
 
 ---
 

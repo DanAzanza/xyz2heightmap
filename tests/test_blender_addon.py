@@ -85,6 +85,17 @@ def run_integration_test() -> None:
             assert len(plane_obj.data.uv_layers) == 1
             assert len(plane_obj.modifiers) == 2
 
+            hm_img = bpy.data.images.get("XYZ_Heightmap_terrain_test")
+            assert hm_img is not None
+            assert max(hm_img.pixels[:]) > 0.99
+
+            depsgraph = bpy.context.evaluated_depsgraph_get()
+            eval_plane = plane_obj.evaluated_get(depsgraph)
+            eval_mesh = eval_plane.to_mesh()
+            eval_z_max = max(v.co.z for v in eval_mesh.vertices)
+            eval_plane.to_mesh_clear()
+            assert eval_z_max > 15.0
+
             # 3. Test Re-Generation Round-Trip while Displaced Plane is still selected
             res_hm_repeat = bpy.ops.object.xyz_generate_heightmap()
             assert "FINISHED" in res_hm_repeat
