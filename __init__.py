@@ -63,6 +63,12 @@ def register() -> None:
     if bpy is None:
         raise RuntimeError("register() requires an active Blender (bpy) runtime.")
     for cls in classes:
+        existing = getattr(bpy.types, cls.__name__, None)
+        if existing is not None:
+            try:
+                bpy.utils.unregister_class(existing)
+            except (RuntimeError, ValueError):
+                pass
         bpy.utils.register_class(cls)
     cast(Any, bpy.types.Scene).xyz_terrain_props = bpy.props.PointerProperty(type=XYZTerrainProperties)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)

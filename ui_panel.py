@@ -7,7 +7,12 @@ Defines Sidebar Panels in the 3D Viewport (N-Panel > XYZ Terrain Tab).
 import os
 from typing import Any
 
-import bpy
+try:
+    import bpy
+except ImportError:
+    bpy: Any = None  # type: ignore[assignment]
+
+_PanelBase = bpy.types.Panel if bpy is not None else object
 
 try:
     from .import_operator import (
@@ -53,7 +58,7 @@ def _draw_active_object_status(layout: Any, context: Any) -> None:
         box.label(text="Selected mesh has 0 vertices!", icon="ERROR")
 
 
-class VIEW3D_PT_xyz_1_import(bpy.types.Panel):
+class VIEW3D_PT_xyz_1_import(_PanelBase):  # type: ignore[misc]
     """Panel 1: Point Cloud File Import & Setup"""
 
     bl_label = "1. Point Cloud Import"
@@ -74,8 +79,12 @@ class VIEW3D_PT_xyz_1_import(bpy.types.Panel):
         if not props.xyz_filepath:
             box = layout.box()
             box.label(text="Select an XYZ file to begin", icon="INFO")
+        elif props.xyz_filepath.startswith("//") and (bpy is not None and not bpy.data.is_saved):
+            box = layout.box()
+            box.alert = True
+            box.label(text="Save project before using '//' relative path", icon="ERROR")
         else:
-            abs_path = bpy.path.abspath(props.xyz_filepath)
+            abs_path = bpy.path.abspath(props.xyz_filepath) if bpy is not None else os.path.abspath(props.xyz_filepath)
             if not os.path.isfile(abs_path):
                 box = layout.box()
                 box.alert = True
@@ -103,7 +112,7 @@ class VIEW3D_PT_xyz_1_import(bpy.types.Panel):
         )
 
 
-class VIEW3D_PT_xyz_2_heightmap(bpy.types.Panel):
+class VIEW3D_PT_xyz_2_heightmap(_PanelBase):  # type: ignore[misc]
     """Panel 2: Heightmap Plane Generator & 16-Bit PNG Export"""
 
     bl_label = "2. Heightmap Plane Generator"
@@ -143,7 +152,7 @@ class VIEW3D_PT_xyz_2_heightmap(bpy.types.Panel):
         layout.separator()
         layout.label(text="16-Bit PNG Export", icon="FILE_IMAGE")
 
-        img_found = any(img.name.startswith("XYZ_Heightmap") for img in bpy.data.images)
+        img_found = any(img.name.startswith("XYZ_Heightmap") for img in bpy.data.images) if bpy else False
         if not img_found:
             box = layout.box()
             box.label(text="No Heightmap texture found in scene", icon="INFO")
@@ -158,7 +167,7 @@ class VIEW3D_PT_xyz_2_heightmap(bpy.types.Panel):
         )
 
 
-class VIEW3D_PT_xyz_3_triangulation(bpy.types.Panel):
+class VIEW3D_PT_xyz_3_triangulation(_PanelBase):  # type: ignore[misc]
     """Panel 3: Triangulated 3D Mesh Studio (Delaunay CDT)"""
 
     bl_label = "3. Triangulated 3D Mesh"

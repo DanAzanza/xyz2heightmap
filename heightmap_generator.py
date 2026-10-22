@@ -271,17 +271,23 @@ def create_blender_image(
     return image
 
 
-def export_heightmap_16bit_png(image: bpy_types.types.Image, output_path: str) -> None:
+def export_heightmap_16bit_png(
+    image: bpy_types.types.Image,
+    output_path: str,
+    scene: bpy_types.types.Scene | None = None,
+) -> None:
     """
     Exports a Blender heightmap image asset as a 16-bit Grayscale PNG file to disk.
 
     :param image: bpy.types.Image asset.
     :param output_path: Absolute file destination path.
+    :param scene: Target bpy.types.Scene context for render and view settings.
     """
     if bpy is None:
         raise RuntimeError("export_heightmap_16bit_png requires an active Blender (bpy) runtime.")
+    if scene is None:
+        raise ValueError("scene parameter must be explicitly provided for export_heightmap_16bit_png.")
 
-    scene = bpy.context.scene
     render_settings = scene.render.image_settings
     prev_format = render_settings.file_format
     prev_depth = render_settings.color_depth
@@ -295,17 +301,18 @@ def export_heightmap_16bit_png(image: bpy_types.types.Image, output_path: str) -
         render_settings.color_depth = "16"
         render_settings.color_mode = "BW"
 
-        if prev_transform:
-            enum_items = view_settings.bl_rna.properties["view_transform"].enum_items
+        if prev_transform and view_settings is not None:
+            view_settings_any = cast(Any, view_settings)
+            enum_items = getattr(view_settings_any.bl_rna.properties["view_transform"], "enum_items", {})
             if "Raw" in enum_items:
-                view_settings.view_transform = "Raw"
+                view_settings_any.view_transform = "Raw"
             elif "Standard" in enum_items:
-                view_settings.view_transform = "Standard"
+                view_settings_any.view_transform = "Standard"
 
         image.save_render(output_path, scene=scene)
     finally:
         render_settings.file_format = prev_format
         render_settings.color_depth = prev_depth
         render_settings.color_mode = prev_mode
-        if prev_transform:
-            view_settings.view_transform = prev_transform
+        if prev_transform and view_settings is not None:
+            cast(Any, view_settings).view_transform = prev_transform

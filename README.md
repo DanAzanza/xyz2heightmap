@@ -111,7 +111,7 @@ python -m pyright
 To run the headless Blender end-to-end integration test:
 
 ```bash
-blender --background --python tests/test_blender_addon.py
+blender --background --factory-startup --python-exit-code 1 --python tests/test_blender_addon.py
 ```
 
 ---

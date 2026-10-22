@@ -53,7 +53,7 @@ python -m ruff check .
 python -m pyright
 
 # Run Headless Blender end-to-end integration test
-blender --background --python tests/test_blender_addon.py
+blender --background --factory-startup --python-exit-code 1 --python tests/test_blender_addon.py
 ```
 
 ---

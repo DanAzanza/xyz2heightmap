@@ -52,6 +52,7 @@ def _assign_terrain_metadata(
 def create_point_cloud_object(
     cloud: XYZCloudData,
     object_name: str = "XYZ_PointCloud",
+    target_collection: Any = None,
 ) -> bpy_types.types.Object:
     """
     Creates a Point Cloud Mesh Object in Blender 5.x using direct C-buffer foreach_set
@@ -59,10 +60,13 @@ def create_point_cloud_object(
 
     :param cloud: XYZCloudData metrics and points.
     :param object_name: Desired object name.
+    :param target_collection: Target bpy.types.Collection to link the created object into.
     :return: Created bpy.types.Object.
     """
     if bpy is None:
         raise RuntimeError("create_point_cloud_object requires an active Blender (bpy) runtime.")
+    if target_collection is None:
+        raise ValueError("target_collection must be explicitly provided for create_point_cloud_object.")
 
     mesh = bpy.data.meshes.new(name=f"{object_name}_Mesh")
     num_pts = len(cloud.points)
@@ -73,7 +77,7 @@ def create_point_cloud_object(
     mesh.update()
 
     obj = bpy.data.objects.new(name=object_name, object_data=mesh)
-    bpy.context.scene.collection.objects.link(obj)
+    target_collection.objects.link(obj)
 
     obj["is_xyz_pointcloud"] = True
     _assign_terrain_metadata(obj, cloud)
@@ -194,6 +198,7 @@ def create_displaced_plane(
     subdivision_levels: int = 6,
     object_name: str = "XYZ_Terrain_Plane",
     source_pointcloud_name: str | None = None,
+    target_collection: Any = None,
 ) -> bpy_types.types.Object:
     """
     Creates a 3D Plane matching exact physical X/Y bounds without using context-sensitive
@@ -204,10 +209,13 @@ def create_displaced_plane(
     :param subdivision_levels: Subsurf viewport level.
     :param object_name: Name of the created mesh object.
     :param source_pointcloud_name: Optional name of the source point cloud object.
+    :param target_collection: Target bpy.types.Collection to link the created plane object into.
     :return: Created bpy.types.Object.
     """
     if bpy is None:
         raise RuntimeError("create_displaced_plane requires an active Blender (bpy) runtime.")
+    if target_collection is None:
+        raise ValueError("target_collection must be explicitly provided for create_displaced_plane.")
     if cloud.width_m <= 0.0 or cloud.height_m <= 0.0:
         raise ValueError(
             "Cannot create a 2D displaced terrain plane from a 1D colinear point cloud (both width and height must be > 0)."
@@ -238,7 +246,7 @@ def create_displaced_plane(
 
     plane_obj = bpy.data.objects.new(name=object_name, object_data=mesh)
     plane_obj.location = (center_x, center_y, center_z)
-    bpy.context.scene.collection.objects.link(plane_obj)
+    target_collection.objects.link(plane_obj)
 
     plane_obj["is_xyz_displaced_plane"] = True
     _assign_terrain_metadata(plane_obj, cloud, source_pointcloud_name=source_pointcloud_name)
@@ -273,6 +281,7 @@ def create_triangulated_mesh(
     max_points: int = 500000,
     object_name: str = "XYZ_Terrain_Triangulated",
     source_pointcloud_name: str | None = None,
+    target_collection: Any = None,
 ) -> bpy_types.types.Object:
     """
     Directly triangulates 3D points into a Terrain Mesh using 2D Delaunay CDT.
@@ -282,10 +291,13 @@ def create_triangulated_mesh(
     :param max_points: Maximum cap of vertices for performance protection.
     :param object_name: Name of created mesh object.
     :param source_pointcloud_name: Optional name of the source point cloud object.
+    :param target_collection: Target bpy.types.Collection to link the created mesh object into.
     :return: Created bpy.types.Object.
     """
     if bpy is None or mathutils is None or geom is None:
         raise RuntimeError("create_triangulated_mesh requires an active Blender (bpy/mathutils) runtime.")
+    if target_collection is None:
+        raise ValueError("target_collection must be explicitly provided for create_triangulated_mesh.")
     if point_density_pct <= 0.0 or point_density_pct > 100.0:
         raise ValueError(f"point_density_pct must be in (0, 100], got {point_density_pct}.")
 
@@ -333,7 +345,7 @@ def create_triangulated_mesh(
     mesh.update()
 
     obj = bpy.data.objects.new(name=object_name, object_data=mesh)
-    bpy.context.scene.collection.objects.link(obj)
+    target_collection.objects.link(obj)
 
     _assign_terrain_metadata(obj, cloud, source_pointcloud_name=source_pointcloud_name)
     return obj

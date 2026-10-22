@@ -71,6 +71,17 @@ def run_integration_test() -> None:
             assert pc_obj["real_world_offset_y"] == 205.0
             assert pc_obj["real_world_offset_z"] == 10.0
 
+            # 1b. Negative Test: Point cloud import rejects relative path '//' on unsaved blend
+            props.xyz_filepath = "//unsaved_relative.xyz"
+            rejected_import_rel = False
+            try:
+                res_imp_rel = bpy.ops.object.xyz_import_pointcloud()
+                rejected_import_rel = "CANCELLED" in res_imp_rel
+            except RuntimeError as exc:
+                rejected_import_rel = "Cannot use relative path" in str(exc)
+            assert rejected_import_rel
+            props.xyz_filepath = xyz_path
+
             # 2. Test Heightmap Plane Generation Operator
             props.resolution_mode = "CUSTOM"
             props.custom_res_x = 64
@@ -88,6 +99,8 @@ def run_integration_test() -> None:
             hm_img = bpy.data.images.get("XYZ_Heightmap_terrain_test")
             assert hm_img is not None
             assert max(hm_img.pixels[:]) > 0.99
+            if hasattr(hm_img, "buffers_free"):
+                hm_img.buffers_free()
 
             depsgraph = bpy.context.evaluated_depsgraph_get()
             eval_plane = plane_obj.evaluated_get(depsgraph)
@@ -127,6 +140,76 @@ def run_integration_test() -> None:
             assert "FINISHED" in res_exp
             assert os.path.isfile(png_out)
             assert os.path.getsize(png_out) > 0
+
+            # 7. Boundary & Negative Tests for Core Generator Functions
+            import numpy as np
+
+            from heightmap_generator import export_heightmap_16bit_png
+            from mesh_generator import (
+                create_displaced_plane,
+                create_point_cloud_object,
+                create_triangulated_mesh,
+                extract_points_from_object,
+            )
+            from xyz_parser import XYZCloudData
+
+            sample_cloud = XYZCloudData(
+                points=np.array([[0.0, 0.0, 1.0], [1.0, 1.0, 2.0], [2.0, 0.0, 3.0]]),
+                xmin=0.0, xmax=2.0, ymin=0.0, ymax=1.0, zmin=1.0, zmax=3.0,
+                origin_offset=(0.0, 0.0, 0.0),
+            )
+
+            # 7a. Missing target_collection must raise ValueError
+            try:
+                create_point_cloud_object(sample_cloud, target_collection=None)
+                raise AssertionError("Expected ValueError for missing target_collection")
+            except ValueError as exc:
+                assert "target_collection must be explicitly provided" in str(exc)
+
+            # 7b. Colinear 1D cloud in create_displaced_plane must raise ValueError
+            colinear_cloud = XYZCloudData(
+                points=np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 2.0]]),
+                xmin=0.0, xmax=1.0, ymin=0.0, ymax=0.0, zmin=1.0, zmax=2.0,
+                origin_offset=(0.0, 0.0, 0.0),
+            )
+            try:
+                create_displaced_plane(hm_img, colinear_cloud, target_collection=scene.collection)
+                raise AssertionError("Expected ValueError for colinear 1D cloud")
+            except ValueError as exc:
+                assert "colinear point cloud" in str(exc)
+
+            # 7c. < 3 points in create_triangulated_mesh must raise ValueError
+            try:
+                create_triangulated_mesh(colinear_cloud, target_collection=scene.collection)
+                raise AssertionError("Expected ValueError for <3 points")
+            except ValueError as exc:
+                assert "requires at least 3 points" in str(exc)
+
+            # 7d. Invalid density in create_triangulated_mesh must raise ValueError
+            try:
+                create_triangulated_mesh(sample_cloud, point_density_pct=0.0, target_collection=scene.collection)
+                raise AssertionError("Expected ValueError for density <= 0")
+            except ValueError as exc:
+                assert "point_density_pct must be in (0, 100]" in str(exc)
+
+            # 7e. Missing scene in export_heightmap_16bit_png must raise ValueError
+            try:
+                export_heightmap_16bit_png(hm_img, png_out, scene=None)
+                raise AssertionError("Expected ValueError for missing scene")
+            except ValueError as exc:
+                assert "scene parameter must be explicitly provided" in str(exc)
+
+            # 7f. Non-mesh object in extract_points_from_object must raise ValueError
+            empty_obj = bpy.data.objects.new(name="Empty_Test", object_data=None)
+            scene.collection.objects.link(empty_obj)
+            try:
+                extract_points_from_object(empty_obj)
+                raise AssertionError("Expected ValueError for non-mesh object")
+            except ValueError as exc:
+                assert "Please select a Mesh or Point Cloud object" in str(exc)
+            finally:
+                scene.collection.objects.unlink(empty_obj)
+                bpy.data.objects.remove(empty_obj)
 
     finally:
         addon_init.unregister()

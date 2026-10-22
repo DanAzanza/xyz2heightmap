@@ -9,15 +9,34 @@ from __future__ import annotations
 import os
 from typing import Any, cast
 
-import bpy
-from bpy.props import (
-    BoolProperty,
-    EnumProperty,
-    FloatProperty,
-    IntProperty,
-    StringProperty,
-)
-from bpy_extras.io_utils import ImportHelper
+try:
+    import bpy
+    from bpy.props import (
+        BoolProperty,
+        EnumProperty,
+        FloatProperty,
+        IntProperty,
+        StringProperty,
+    )
+    from bpy_extras.io_utils import ImportHelper
+except ImportError:
+    bpy: Any = None  # type: ignore[assignment]
+    ImportHelper = object  # type: ignore[misc,assignment]
+
+    def BoolProperty(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+        return Any
+
+    def EnumProperty(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+        return Any
+
+    def FloatProperty(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+        return Any
+
+    def IntProperty(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+        return Any
+
+    def StringProperty(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+        return Any
 
 try:
     from .heightmap_generator import (
@@ -48,8 +67,11 @@ except ImportError:
     )
     from xyz_parser import load_xyz_file
 
+_PropertyGroupBase = bpy.types.PropertyGroup if bpy is not None else object
+_OperatorBase = bpy.types.Operator if bpy is not None else object
 
-class XYZTerrainProperties(bpy.types.PropertyGroup):
+
+class XYZTerrainProperties(_PropertyGroupBase):  # type: ignore[misc,valid-type]
     """Scene properties for XYZ Terrain Blender 5.x Extension."""
 
     xyz_filepath: StringProperty(  # type: ignore[valid-type]
@@ -230,7 +252,13 @@ def _execute_pointcloud_import(operator: Any, context: Any) -> Any:
         operator.report({"ERROR"}, msg)
         return {"CANCELLED"}
 
-    filepath = bpy.path.abspath(raw_filepath)
+    if raw_filepath.startswith("//") and (bpy is None or not bpy.data.is_saved):
+        msg = "Cannot use relative path '//' before saving the .blend file. Save the project or choose an absolute path."
+        show_error_popup(msg, title="Unsaved Blend File")
+        operator.report({"ERROR"}, msg)
+        return {"CANCELLED"}
+
+    filepath = bpy.path.abspath(raw_filepath) if bpy is not None else os.path.abspath(raw_filepath)
     if not os.path.isfile(filepath):
         msg = f"XYZ file does not exist on disk: '{filepath}'"
         show_error_popup(msg, title="File Not Found")
@@ -266,7 +294,8 @@ def _execute_pointcloud_import(operator: Any, context: Any) -> Any:
 
     base_name = os.path.splitext(os.path.basename(filepath))[0]
     obj_name = f"XYZ_PointCloud_{base_name}"
-    pc_obj = create_point_cloud_object(cloud, object_name=obj_name)
+    target_col = context.collection if getattr(context, "collection", None) else context.scene.collection
+    pc_obj = create_point_cloud_object(cloud, object_name=obj_name, target_collection=target_col)
     _select_and_activate(context, pc_obj)
 
     operator.report(
@@ -276,7 +305,7 @@ def _execute_pointcloud_import(operator: Any, context: Any) -> Any:
     return {"FINISHED"}
 
 
-class IMPORT_OT_xyz_file_select(bpy.types.Operator, ImportHelper):  # type: ignore[misc]
+class IMPORT_OT_xyz_file_select(_OperatorBase, ImportHelper):  # type: ignore[misc]
     """Select and import an XYZ/PTS/TXT Point Cloud file"""
 
     bl_idname = "import_scene.xyz_file_select"
@@ -297,7 +326,7 @@ class IMPORT_OT_xyz_file_select(bpy.types.Operator, ImportHelper):  # type: igno
         return _execute_pointcloud_import(self, context)
 
 
-class OBJECT_OT_xyz_import_pointcloud(bpy.types.Operator):
+class OBJECT_OT_xyz_import_pointcloud(_OperatorBase):  # type: ignore[misc]
     """Step 1: Import XYZ File as a Point Cloud Object into 3D Viewport"""
 
     bl_idname = "object.xyz_import_pointcloud"
@@ -308,7 +337,7 @@ class OBJECT_OT_xyz_import_pointcloud(bpy.types.Operator):
         return _execute_pointcloud_import(self, context)
 
 
-class OBJECT_OT_xyz_generate_heightmap(bpy.types.Operator):
+class OBJECT_OT_xyz_generate_heightmap(_OperatorBase):  # type: ignore[misc]
     """Step 2: Generate Heightmap Float Image & Displaced Plane from Selected Object"""
 
     bl_idname = "object.xyz_generate_heightmap"
@@ -339,12 +368,14 @@ class OBJECT_OT_xyz_generate_heightmap(bpy.types.Operator):
             img_name = f"XYZ_Heightmap_{clean_src_name}"
             img = create_blender_image(norm_grid, image_name=img_name)
 
+            target_col = context.collection if getattr(context, "collection", None) else context.scene.collection
             plane_obj = create_displaced_plane(
                 img,
                 cloud,
                 subdivision_levels=props.subdivision_levels,
                 object_name=f"XYZ_Terrain_Plane_{clean_src_name}",
                 source_pointcloud_name=source_obj.name,
+                target_collection=target_col,
             )
 
             _select_and_activate(context, plane_obj)
@@ -361,7 +392,7 @@ class OBJECT_OT_xyz_generate_heightmap(bpy.types.Operator):
             return {"CANCELLED"}
 
 
-class OBJECT_OT_xyz_generate_triangulation(bpy.types.Operator):
+class OBJECT_OT_xyz_generate_triangulation(_OperatorBase):  # type: ignore[misc]
     """Step 3: Triangulate Selected Object into a 3D Terrain Mesh using Delaunay CDT"""
 
     bl_idname = "object.xyz_generate_triangulation"
@@ -376,12 +407,14 @@ class OBJECT_OT_xyz_generate_triangulation(bpy.types.Operator):
             source_obj = resolve_source_mesh_object(active_obj)
             cloud = extract_points_from_object(source_obj)
             clean_src_name = _clean_terrain_base_name(source_obj.name)
+            target_col = context.collection if getattr(context, "collection", None) else context.scene.collection
             tri_obj = create_triangulated_mesh(
                 cloud,
                 point_density_pct=props.triangulation_density_pct,
                 max_points=props.max_triangulation_points,
                 object_name=f"XYZ_Terrain_Triangulated_{clean_src_name}",
                 source_pointcloud_name=source_obj.name,
+                target_collection=target_col,
             )
 
             _select_and_activate(context, tri_obj)
@@ -398,7 +431,7 @@ class OBJECT_OT_xyz_generate_triangulation(bpy.types.Operator):
             return {"CANCELLED"}
 
 
-class OBJECT_OT_xyz_export_16bit_png(bpy.types.Operator):
+class OBJECT_OT_xyz_export_16bit_png(_OperatorBase):  # type: ignore[misc]
     """Export active heightmap texture asset as 16-Bit Grayscale PNG file"""
 
     bl_idname = "object.xyz_export_16bit_png"
@@ -415,13 +448,13 @@ class OBJECT_OT_xyz_export_16bit_png(bpy.types.Operator):
             self.report({"ERROR"}, msg)
             return {"CANCELLED"}
 
-        if raw_path.startswith("//") and not bpy.data.is_saved:
+        if raw_path.startswith("//") and (bpy is None or not bpy.data.is_saved):
             msg = "Cannot use relative path '//' before saving the .blend file. Save the project or choose an absolute path."
             show_error_popup(msg, title="Unsaved Blend File")
             self.report({"ERROR"}, msg)
             return {"CANCELLED"}
 
-        out_path = os.path.abspath(bpy.path.abspath(raw_path))
+        out_path = os.path.abspath(bpy.path.abspath(raw_path)) if bpy is not None else os.path.abspath(raw_path)
         out_dir = os.path.dirname(out_path)
         if out_dir and not os.path.isdir(out_dir):
             msg = f"Destination directory '{out_dir}' does not exist!"
@@ -437,7 +470,7 @@ class OBJECT_OT_xyz_export_16bit_png(bpy.types.Operator):
             return {"CANCELLED"}
 
         try:
-            export_heightmap_16bit_png(img, out_path)
+            export_heightmap_16bit_png(img, out_path, scene=context.scene)
             self.report(
                 {"INFO"}, f"Successfully saved 16-Bit PNG Heightmap to: {out_path}"
             )

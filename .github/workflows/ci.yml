@@ -75,4 +75,4 @@ jobs:
 
     - name: Run Headless Blender Integration Test
       run: |
-        blender --background --python tests/test_blender_addon.py
+        blender --background --factory-startup --python-exit-code 1 --python tests/test_blender_addon.py
