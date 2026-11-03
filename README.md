@@ -8,7 +8,7 @@ An advanced, high-performance **Blender 5.x Extension** for importing ASCII **XY
 
 Convert real-world LiDAR, GIS, or DEM elevation data into **3D terrain meshes** or **32-bit floating-point heightmaps** complete with automated displacement shaders, IDW gap filling, and 16-bit PNG export capabilities.
 
-![Aerial urban terrain reconstruction in Blender Cycles](assets/blender_terrain_aerial_overview.jpg)
+![Aerial urban terrain reconstruction in Blender Cycles](assets/blender_terrain_aerial_overview.png)
 
 ---
 
