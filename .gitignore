@@ -37,3 +37,5 @@ build/
 *.log
 !docs/*.png
 !assets/*.png
+!assets/*.jpg
+!assets/*.jpeg

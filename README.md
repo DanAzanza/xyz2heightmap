@@ -8,6 +8,8 @@ An advanced, high-performance **Blender 5.x Extension** for importing ASCII **XY
 
 Convert real-world LiDAR, GIS, or DEM elevation data into **3D terrain meshes** or **32-bit floating-point heightmaps** complete with automated displacement shaders, IDW gap filling, and 16-bit PNG export capabilities.
 
+![Aerial urban terrain reconstruction in Blender Cycles](assets/blender_terrain_aerial_overview.jpg)
+
 ---
 
 ## 🌟 Key Features
@@ -57,6 +59,9 @@ The add-on adds a dedicated **XYZ Terrain** tab to the **3D Viewport Sidebar (N-
 5. Click **Generate Heightmap Plane**.
    - *Result*: Creates a displaced terrain plane with explicit UV coordinates, generates a 32-bit float texture, applies a `Displace` modifier set to physical Z-amplitude, and creates a preconfigured Cycles/Eevee material with `Non-Color` space settings.
 
+![Point cloud overlay on displaced terrain plane](assets/blender_pointcloud_and_displacement.png)
+*Close-up viewport inspection: raw XYZ point cloud vertices (orange) aligned seamlessly on top of the displaced 32-bit float terrain surface.*
+
 ### Step 3: Generate 3D Delaunay Mesh (Alternative)
 1. Select the imported point cloud object (or generated heightmap plane).
 2. Set **Detail Density (%)** to control vertex sampling density (`0.1%` to `100%`).
@@ -82,6 +87,7 @@ xyz2heightmap/
 ├── mesh_generator.py             # Context-free mesh builder & Delaunay 2.5D triangulation
 ├── import_operator.py            # PropertyGroup & UI execution operators
 ├── ui_panel.py                   # N-Panel 3D Viewport layout panels
+├── assets/                       # Documentation screenshots & visual assets
 ├── tests/                        # Automated unit & headless Blender integration test suite
 │   ├── test_xyz_parser.py
 │   ├── test_heightmap_generator.py
