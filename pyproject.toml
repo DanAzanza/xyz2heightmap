@@ -1,6 +1,6 @@
 [project]
 name = "xyz2heightmap"
-version = "3.0.0"
+version = "1.0.0"
 description = "Blender 5.0+ Extension for importing ASCII XYZ/PTS/TXT point clouds as 32-bit float heightmaps or 2.5D Delaunay terrain meshes."
 readme = "README.md"
 requires-python = ">=3.11"
