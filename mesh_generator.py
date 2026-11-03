@@ -240,8 +240,9 @@ def create_displaced_plane(
     mesh.from_pydata(verts, [], faces)
 
     uv_layer = mesh.uv_layers.new(name="UVMap")
-    uv_flat = np.array([0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0], dtype=np.float32)
-    uv_layer.data.foreach_set("uv", cast(Any, uv_flat))
+    if uv_layer is not None:
+        uv_flat = np.array([0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0], dtype=np.float32)
+        uv_layer.data.foreach_set("uv", cast(Any, uv_flat))
     mesh.update()
 
     plane_obj = bpy.data.objects.new(name=object_name, object_data=mesh)

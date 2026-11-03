@@ -1,8 +1,17 @@
 # Project Knowledge Base (`xyz2heightmap`)
 
 ## 1. Central Verification & CI Parity Gate Commands
-Run the following commands from the repository root before any commit or release:
+Run the central verification gate from the repository root before any commit or release:
 
+```bash
+# Unified CI Parity Gate (Linter, Typechecker, Pytest with Coverage, and In-Blender Test)
+python scripts/verify_ci.py
+
+# Or on Windows via one-click batch script:
+test.bat
+```
+
+Individual commands for targeted intermediate checks:
 ```bash
 # 1. Linter & Import Sorting
 python -m ruff check .
@@ -13,8 +22,8 @@ python -m pyright
 # 3. Unit & Domain Test Suite (Pure Python / NumPy)
 python -m pytest -v
 
-# 4. Headless Blender End-to-End Integration Test
-blender --background --factory-startup --python-exit-code 1 --python tests/test_blender_addon.py
+# 4. Headless Blender End-to-End Integration Test (with auto-detected Blender)
+python scripts/run_blender_tests.py
 ```
 
 ---

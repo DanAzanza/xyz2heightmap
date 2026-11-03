@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  quality-gate:
+    name: Quality Gate (Lint, Types, Tests)
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run Full Quality Gate (Dependencies, Ruff, Pyright, Pytest with Coverage)
+        run: python scripts/verify_ci.py --skip-blender
+
+  blender-tests:
+    name: Headless Blender Integration Tests
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Install System Dependencies for Headless Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libglu1-mesa libxi6 libxcursor1 libxkbcommon0 libxxf86vm1 libxfixes3 libxrender1 libsm6 libxext6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Cache Portable Blender
+        id: cache-blender
+        uses: actions/cache@v5
+        with:
+          path: /opt/blender
+          key: ${{ runner.os }}-blender-5.0.0-linux-x64-v1
+
+      - name: Download & Extract Blender 5.0
+        if: steps.cache-blender.outputs.cache-hit != 'true'
+        run: |
+          sudo mkdir -p /opt/blender
+          sudo chown -R $USER:$USER /opt/blender
+          curl -fSL --retry 3 --retry-delay 5 "https://download.blender.org/release/Blender5.0/blender-5.0.0-linux-x64.tar.xz" -o /tmp/blender.tar.xz
+          tar -xJf /tmp/blender.tar.xz -C /opt/blender --strip-components=1
+          rm -f /tmp/blender.tar.xz
+
+      - name: Verify Blender Binary & Permissions
+        run: |
+          chmod +x /opt/blender/blender
+          /opt/blender/blender --version
+
+      - name: Run In-Blender Test Suite
+        env:
+          BLENDER_PATH: /opt/blender/blender
+        run: python scripts/run_blender_tests.py
+
+  build-and-release:
+    name: Build and Publish Release
+    needs: [quality-gate, blender-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build Extension Package
+        run: python scripts/build_extension.py
+
+      - name: Create GitHub Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
